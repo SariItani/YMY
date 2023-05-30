@@ -1,6 +1,6 @@
 from flask import Blueprint, redirect, render_template, request, send_file, url_for
 from flask_login import login_required
-from sqlalchemy import and_, inspect
+from sqlalchemy import and_, inspect, extract, func
 from .models import *
 from . import db
 from werkzeug.utils import secure_filename
@@ -141,6 +141,101 @@ def reports():
     if request.method == 'POST':
         if request.form.get('logout') == 'logout':
             return redirect(url_for('auth.logout'))
+        elif request.form.get('query_type'):
+            query_type = request.form.get('query_type')
+            if query_type == 'month':
+                months_data = db.session.query(func.extract('month', Projects.at_client)).distinct().all()
+                monthly_data = {}
+                for month_tuple in months_data:
+                    month_number = month_tuple[0]
+                    month_projects = Projects.query.filter(func.extract('month', Projects.at_client) == month_number).all()
+                    revenue = 0
+                    tutor_data = []
+                    client_data = []
+                    university_data = []
+                    department_data = []
+                    for project in month_projects:
+                        revenue += project.price - project.gain
+                        tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
+                        tutor_data.append(tutor_name_id)
+                        client_name_id = f"{project.client.name} (ID: {project.client.id})"
+                        client_data.append(client_name_id)
+                        university_data.append(project.client.university)
+                        department_data.append(project.department)
+                    monthly_data[month_number] = {
+                        'Revenue': revenue,
+                        'Tutors': tutor_data,
+                        'Clients': client_data,
+                        'Universities': university_data,
+                        'Departments': department_data
+                    }
+                for month_data in monthly_data.values():
+                    month_data['Tutors'] = ', '.join(month_data['Tutors'])
+                    month_data['Clients'] = ', '.join(month_data['Clients'])
+                    month_data['Universities'] = ', '.join(month_data['Universities'])
+                    month_data['Departments'] = ', '.join(month_data['Departments'])
+                headers = list(next(iter(monthly_data.values())).keys())
+                headers.insert(0, 'Month #nb')
+                print(headers)
+                print(monthly_data)
+                return render_template("/reports.html", query_type=query_type, data=monthly_data, headers=headers)
+            elif query_type == 'department':
+                departments_data = db.session.query(Projects.department).distinct().all()
+                department_data = {}
+                for department_tuple in departments_data:
+                    department_name = department_tuple[0]
+                    department_projects = Projects.query.filter_by(department=department_name).all()
+                    revenue = 0
+                    tutor_data = []
+                    client_data = []
+                    university_data = []
+                    project_data = []
+                    for project in department_projects:
+                        revenue += project.price - project.gain
+                        tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
+                        tutor_data.append(tutor_name_id)
+                        client_name_id = f"{project.client.name} (ID: {project.client.id})"
+                        client_data.append(client_name_id)
+                        university_data.append(project.client.university)
+                        project_data.append(project.name)
+                    department_data[department_name] = {
+                        'Revenue': revenue,
+                        'Tutors': ', '.join(tutor_data),
+                        'Clients': ', '.join(client_data),
+                        'Universities': ', '.join(university_data),
+                        'Projects': ', '.join(project_data)
+                    }
+                headers = list(next(iter(department_data.values())).keys()) if department_data else ['Department']
+                headers.insert(0, 'Department')
+                return render_template("/reports.html", query_type=query_type, data=department_data, headers=headers)
+            elif query_type == 'uni':
+                universities_data = db.session.query(Clients.university).distinct().all()
+                university_data = {}
+                for university_tuple in universities_data:
+                    university_name = university_tuple[0]
+                    university_projects = Projects.query.join(Clients).filter(Clients.university == university_name).all()
+                    revenue = 0
+                    tutor_data = []
+                    client_data = []
+                    department_data = set()
+                    project_data = []
+                    for project in university_projects:
+                        revenue += project.price - project.gain
+                        tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
+                        tutor_data.append(tutor_name_id)
+                        client_name_id = f"{project.client.name} (ID: {project.client.id})"
+                        client_data.append(client_name_id)
+                        department_data.add(project.department)  # Use set to collect unique department names
+                        project_data.append(project.name)
+                    university_data[university_name] = {
+                        'Revenue': revenue,
+                        'Tutors': ', '.join(tutor_data),
+                        'Clients': ', '.join(client_data),
+                        'Departments': ', '.join(department_data),
+                        'Projects': ', '.join(project_data)
+                    }
+                headers = ['University', 'Revenue', 'Tutors', 'Clients', 'Departments', 'Projects']
+                return render_template("/reports.html", query_type=query_type, data=university_data, headers=headers)
     return render_template("/reports.html")
 
 

@@ -1,7 +1,127 @@
-{% extends 'base.html' %}
-{% block title %}Home{% endblock %}
-{% block container%}
-<h1>Montlh Report</h1>
-<h1>By Department</h1>
-<h1>By University</h1>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" href="/static/logo.png" />
+		<link
+			rel="stylesheet"
+			href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css"
+		/>
+		<link
+			rel="stylesheet"
+			href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css"
+		/>
+		<title>Reports</title>
+	</head>
+	<body>
+		<nav class="navbar navbar-expand-lg navbar-light bg-info">
+			<a class="navbar-brand text-dark" href="/"
+				><img
+					src="/static/logo.png"
+					width="32"
+					height="32"
+					class="d-inline-block align-top mr-2"
+					alt=""
+				/><b>YMY Agency</b></a
+			>
+			<button
+				class="navbar-toggler"
+				type="button"
+				data-toggle="collapse"
+				data-target="#navbarNav"
+				aria-controls="navbarNav"
+				aria-expanded="false"
+				aria-label="Toggle navigation"
+			>
+				<span class="navbar-toggler-icon"></span>
+			</button>
+			<div class="collapse navbar-collapse" id="navbarNav">
+				<ul class="nav nav-pills">
+					<li class="nav-item active">
+						<a class="nav-link text-white" href="/pending-table"
+							><b>Pending Table</b><span class="sr-only">(current)</span></a
+						>
+					</li>
+          <li class="nav-item">
+						<a class="nav-link text-white" href="/progress-table"
+							><b>Progress Table</b><span class="sr-only"></span></a
+						>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link text-white" href="/reports"><b>Reports</b></a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link text-white" href="/entries"><b>Data Entry</b></a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link text-white" href="/search"><b>Search</b></a>
+					</li>
+				</ul>
+				<ul class="nav nav-pills">
+					<form method="POST" class="form-inline">
+						<li class="nav-item form-inline">
+							<button
+								type="submit"
+								class="btn btn-info"
+								name="logout"
+								value="logout"
+							>
+								<b>Logout</b>
+							</button>
+						</li>
+					</form>
+				</ul>
+			</div>
+		</nav>
+        <div class="container mt-4">
+        <form method="POST">
+            <h1 class="text-secondary mb-3"><b>Obtain the Report By:</b></h1>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="query_type" id="month" value="month">
+                <label class="form-check-label" for="month">By Month</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="query_type" id="department" value="department">
+                <label class="form-check-label" for="department">By Department</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="query_type" id="uni" value="uni">
+                <label class="form-check-label" for="uni">By University</label>
+              </div>              
+            <button class="btn btn-outline-danger" type="submit">Submit</button>
+            <div id="query-results">
+                <h1 class="text-dark"><b>Reports</b></h1>
+                <table id="table" style="width: 100%;" class="table table-striped table-light table-bordered">
+                    <thead class="thead-dark">
+                      <tr>
+                        {% for header in headers %}
+                          <th>{{ header }}</th>
+                        {% endfor %}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for key, row in data.items() %}
+                        <tr>
+                          <td>{{ key }}</td>
+                          {% for cell in row.values() %}
+                            <td>{{ cell }}</td>
+                          {% endfor %}
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>                  
+            </div>
+        </form>
+        </div>
+		<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+		<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+		<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js"></script>
+		<script>
+			$(document).ready(function () {
+				$("#table").DataTable();
+			});
+		</script>
+	</body>
+</html>
