@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="icon" href="/static/logo.ico" />
+
+		<title>{%block title%}Sign Up{% endblock %}</title>
+
+		<!-- Bootstrap core CSS -->
+		<link
+			rel="stylesheet"
+			href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+			integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+			crossorigin="anonymous"
+		/>
+		<link
+			rel="stylesheet"
+			href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+			crossorigin="anonymous"
+		/>
+
+		<!-- Custom styles for this template -->
+		<link href="/static/signin.css" rel="stylesheet" />
+	</head>
+
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+		}
+
+		body:before {
+		content: '';
+		position: fixed;
+		width: 100vw;
+		height: 100vh;
+		z-index: -1;
+		background-image: url('/static/bg.jpg');
+		background-position: center center;
+		background-repeat: no-repeat;
+		background-size: cover;
+		/* filter: blur(1px); */
+		}
+
+		.thing {
+			background-color: rgba(120, 120, 120, 0.25);
+			padding-top: 3.5%;
+		}
+	</style>
+
+	<body class="text-center">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-6 offset-md-3">
+					{% with messages = get_flashed_messages(with_categories=true) %}
+						{% if messages %}
+							{% for category, message in messages %}
+								{% if category == "fail" %}
+									<div class="alert alert-danger alert-dismissible fade show" role="alert">
+										{{message}}
+										<button type="button" class="close" data-dismiss="alert"><span aria-hidden="true"></span>&times;</button>
+									</div>
+								{% endif %}
+							{% endfor %}
+						{% endif %}
+					{% endwith %}
+					<form class="form-signin thing" method="POST">
+						<img class="mb-4 mt-4 img-fluid" src="/static/logo.png" alt="" width="150" height="150" />
+						<h1 class="h3 mb-3 font-weight-normal">
+							{%block enter %}Please sign in{%endblock%}
+						</h1>
+						<label for="inputUsername" class="sr-only">Username</label>
+						<input
+							type="text"
+							id="inputUsername"
+							class="form-control"
+							name="inputUsername"
+							placeholder="Username"
+							required
+							autofocus
+						/>
+						<label for="inputPassword" class="sr-only">Password</label>
+						<input
+							type="password"
+							id="inputPassword"
+							class="form-control mb-4"
+							placeholder="Password"
+							name="inputPassword"
+							required
+						/>
+						{%block redirect%}
+						<a class="text-success" href="/login">Already Have an Account?</a>
+						{%endblock%}
+						<div class="checkbox mb-3"></div>
+						<button class="btn btn-lg btn-success btn-block" type="submit">
+							{%block button%}Sign in{%endblock%}
+						</button>
+						<p class="mt-4 mb-2 text-muted">&copy; 2023-2024</p>
+					</form>
+				</div>
+			</div>
+		</div>
+		<script>
+			// Close the alert message when the "x" button is clicked
+			document.addEventListener('DOMContentLoaded', function() {
+				const closeButton = document.querySelector('.alert .close');
+				if (closeButton) {
+					closeButton.addEventListener('click', function() {
+						this.parentElement.remove();
+					});
+				}
+			});
+		</script>
+		<script
+			src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+			integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+			crossorigin="anonymous"
+		></script>
+		<script
+			src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+			integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+			crossorigin="anonymous"
+		></script>
+	</body>
+</html>

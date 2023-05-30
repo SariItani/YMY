@@ -1,0 +1,360 @@
+{% extends 'base.html' %} 
+{% block title %}Home{% endblock %} 
+{% block container%}
+<div class="container">
+    <div class="row">
+    <div class="col justify-content-center">
+        <div class="col">
+            <div class="card my-4">
+                <div class="card-header">
+                    <h1 class="card-title text-center">Search Client</h1>
+                </div>
+                <div class="card-body">
+                    <div id="client-form">
+                        <form method="POST" name="client">
+                            <div class="form-group">
+                                <label for="name">Filter by Name:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="name"
+                                        name="name"
+                                        placeholder="Enter name"
+                                        autofocus
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-user"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="university">Filter Results by University:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="university"
+                                        name="university"
+                                        placeholder="Enter university"
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-university"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="department">Filter Results by Department:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="department"
+                                        name="department"
+                                        placeholder="Enter department"
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-university"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="number">Filter Results by Number:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="number"
+                                        name="number"
+                                        placeholder="Enter number"
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-phone"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mb-3">
+                                <button name="client" value="client" type="submit" class="btn btn-success">Search</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="text-center">
+                    <button id="toggle-form-btn" class="btn btn-info">Open</button>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col justify-content-center">
+        <div class="col-">
+            <div class="card my-4">
+                <div class="card-header">
+                    <h1 class="card-title text-center">Search Tutors</h1>
+                </div>
+                <div class="card-body">
+                    <div id="tutor-form">
+                        <form method="POST" name="tutor">
+                            <div class="form-group">
+                                <label for="name">Filter by Name:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="name"
+                                        name="name"
+                                        placeholder="Enter name"
+                                        autofocus
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-user"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="department">Filter Results by Department:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="department"
+                                        name="department"
+                                        placeholder="Enter department"
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-university"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="number">Filter Results by Number:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="number"
+                                        name="number"
+                                        placeholder="Enter number"
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-phone"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mb-3">
+                                <button name="tutor" value="tutor" type="submit" class="btn btn-success">Search</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="text-center">
+                        <button id="toggle-tutor-form-btn" class="btn btn-info">Open</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    
+    <div class="col justify-content-center">
+        <div class="col-">
+            <div class="card my-4">
+                <div class="card-header">
+                    <h1 class="card-title text-center">Search Projects</h1>
+                </div>
+                <div class="card-body">
+                    <div id="project-form">
+                        <form method="POST" name="project">
+                            <div class="form-group">
+                                <label for="name">Fitler by Name:</label>
+                                <div class="input-group">
+                                  <input
+                                    type="text"
+                                    class="form-control"
+                                    id="name"
+                                    name="name"
+                                    placeholder="Enter name"
+                                    autofocus
+                                  />
+                                  <div class="input-group-append">
+                                    <span class="input-group-text">
+                                      <i class="fa fa-file"></i>
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="form-group">
+                                <label for="department">Fitler by Department:</label>
+                                <div class="input-group">
+                                  <input
+                                    type="text"
+                                    class="form-control"
+                                    id="department"
+                                    name="department"
+                                    placeholder="Enter department"
+                                  />
+                                  <div class="input-group-append">
+                                    <span class="input-group-text">
+                                      <i class="fa fa-university"></i>
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="form-group">
+                                <label for="due">Filter by Due:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="datetime-local"
+                                        class="form-control"
+                                        id="due"
+                                        name="due"
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-calendar"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                            <label for="status">Filter by Status:</label>
+                                <div class="input-group">
+                                    <input
+                                    type="text"
+                                    class="form-control"
+                                    id="status"
+                                    name="status"
+                                    placeholder="Enter status"
+                                    autofocus
+                                    />
+                                    <div class="input-group-append">
+                                    <span class="input-group-text">
+                                        <i class="fa fa-file"></i>
+                                    </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mb-3">
+                                <button name="project" value="project" type="submit" class="btn btn-success">Search</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="text-center">
+                        <button id="toggle-project-form-btn" class="btn btn-info">Open</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<form method="POST" name="table">
+    <div class="row">
+        <div class="col-md-auto"><h1 class="text-dark">Results:</h1></div>
+        <div class="col mt-2"><button class="btn btn-success mb-3" name="save" value="save">Update</button></div:col>
+    </div>
+    <table class="table table-striped table-bordered text-center table-info">
+      <thead class="thead-dark">
+        <tr>
+          {% for header in headers %}
+            <th>{{ header }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in results %}
+          <tr>
+            {% for header in headers %}
+              {% if header in ['name', 'department', 'description', 'due', 'price', 'client_id', 'university', 'number', 'email', 'gain'] %}
+                <td>
+                  <input style="width: fit-content; height: auto;" type="text" class="form-control" name="{{ header }}[]" value="{{ row[header] }}" />
+                </td>
+                {% elif header == 'fileClient' or header == 'fileTutor' %}
+                <td>
+                  <a target="_blank" href="{{ url_for('views.download_file', filepath=row[header]) }}">Download Here</a>
+                  <input type="hidden" name="{{ header }}[]" value="{{ row[header] }}">
+                </td>
+              {% elif header == 'id' %}
+                <td>{{ row.id }}</td>
+                <input type="hidden" name="{{ header }}[]" value="{{ row.id }}">
+              {% else %}
+                <td>{{ row[header] }}</td>
+                <input type="hidden" name="{{ header }}[]" value="{{ row[header] }}">
+              {% endif %}              
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          {% for header in headers %}
+            <th>{{ header }}</th>
+          {% endfor %}
+        </tr>
+      </tfoot>
+    </table>
+    <input type="hidden" name="headers" value="{{ headers|join(',') }}">
+  </form>
+</div>
+<script>
+    var formVisible = false;
+    var formContainer = document.getElementById("client-form");
+    var toggleButton = document.getElementById("toggle-form-btn");
+
+    formContainer.style.display = "none";
+
+    toggleButton.addEventListener("click", function () {
+        if (formVisible) {
+            formContainer.style.display = "none";
+            toggleButton.textContent = "Open";
+        } else {
+            formContainer.style.display = "block";
+            toggleButton.textContent = "Hide";
+        }
+        formVisible = !formVisible;
+    });
+
+    var tutorFormVisible = false;
+    var tutorFormContainer = document.getElementById("tutor-form");
+    var toggleTutorButton = document.getElementById("toggle-tutor-form-btn");
+
+    tutorFormContainer.style.display = "none";
+
+    toggleTutorButton.addEventListener("click", function () {
+        if (tutorFormVisible) {
+            tutorFormContainer.style.display = "none";
+            toggleTutorButton.textContent = "Open";
+        } else {
+            tutorFormContainer.style.display = "block";
+            toggleTutorButton.textContent = "Hide";
+        }
+        tutorFormVisible = !tutorFormVisible;
+    });
+
+    var projectFormVisible = false;
+    var projectFormContainer = document.getElementById("project-form");
+    var toggleProjectButton = document.getElementById("toggle-project-form-btn");
+
+    projectFormContainer.style.display = "none";
+    
+    toggleProjectButton.addEventListener("click", function () {
+        if (projectFormVisible) {
+            projectFormContainer.style.display = "none";
+            toggleProjectButton.textContent = "Open";
+        } else {
+            projectFormContainer.style.display = "block";
+            toggleProjectButton.textContent = "Hide";
+        }
+        projectFormVisible = !projectFormVisible;
+    });
+</script>
+{% endblock %}

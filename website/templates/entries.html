@@ -1,0 +1,389 @@
+{% extends 'base.html' %} 
+{% block title %}Home{% endblock %} 
+{% block container%}
+<div class="container">
+    <div class="row">
+    <div class="col justify-content-center">
+        <div class="col">
+            <div class="card my-4">
+                <div class="card-header">
+                    <h1 class="card-title text-center">New Client</h1>
+                </div>
+                <div class="card-body">
+                    <div id="client-form" style="display: none">
+                        <form method="POST" name="client">
+                            <div class="form-group">
+                                <label for="name">Name:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="name"
+                                        name="name"
+                                        placeholder="Enter name"
+                                        autofocus
+                                        required
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-user"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="university">University:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="university"
+                                        name="university"
+                                        placeholder="Enter university"
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-university"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="department">Department:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="department"
+                                        name="department"
+                                        placeholder="Enter department"
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-university"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="number">Number:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="number"
+                                        name="number"
+                                        placeholder="Enter number"
+                                        required
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-phone"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="email"
+                                        class="form-control"
+                                        id="email"
+                                        name="email"
+                                        placeholder="Enter email"
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-envelope"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mb-3">
+                                <button name="client" value="client" type="submit" class="btn btn-success">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="text-center">
+                    <button id="toggle-form-btn" class="btn btn-info">Create New Client</button>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col justify-content-center">
+        <div class="col">
+            <div class="card my-4">
+                <div class="card-header">
+                    <h1 class="card-title text-center">New Tutor</h1>
+                </div>
+                <div class="card-body">
+                    <div id="tutor-form" style="display: none">
+                        <form method="POST" name="tutor">
+                            <div class="form-group">
+                                <label for="name">Name:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="name"
+                                        name="name"
+                                        placeholder="Enter name"
+                                        autofocus
+                                        required
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-user"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="department">Department:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="department"
+                                        name="department"
+                                        placeholder="Enter department"
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-university"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="number">Number:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="number"
+                                        name="number"
+                                        placeholder="Enter number"
+                                        required
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-phone"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email:</label>
+                                <div class="input-group">
+                                    <input
+                                        type="email"
+                                        class="form-control"
+                                        id="email"
+                                        name="email"
+                                        placeholder="Enter email"
+                                    />
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fa fa-envelope"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center mb-3">
+                                <button name="tutor" value="tutor" type="submit" class="btn btn-success">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="text-center">
+                        <button id="toggle-tutor-form-btn" class="btn btn-info">Create New Tutor</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col justify-content-center">
+        <div class="col">
+          <div class="card my-4">
+            <div class="card-header">
+              <h1 class="card-title text-center">New Project</h1>
+            </div>
+            <div class="card-body">
+              <div id="project-form" style="display: none">
+                <form method="POST" name="project" enctype="multipart/form-data">
+                  <div class="form-group">
+                    <label for="name">Name:</label>
+                    <div class="input-group">
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="name"
+                        name="name"
+                        placeholder="Enter name"
+                        autofocus
+                        required
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text">
+                          <i class="fa fa-file"></i>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="department">Department:</label>
+                    <div class="input-group">
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="department"
+                        name="department"
+                        placeholder="Enter department"
+                        required
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text">
+                          <i class="fa fa-university"></i>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="due">Due Date and Time:</label>
+                    <div class="input-group">
+                        <input
+                            type="datetime-local"
+                            class="form-control"
+                            id="due"
+                            name="due"
+                            required
+                        />
+                        <div class="input-group-append">
+                            <span class="input-group-text">
+                                <i class="fa fa-calendar"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                  <div class="form-group">
+                    <label for="price">Price:</label>
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        class="form-control"
+                        id="price"
+                        name="price"
+                        placeholder="Enter price"
+                        required
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text">
+                          <i class="fa fa-money"></i>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="description">Description:</label>
+                    <div class="input-group">
+                      <textarea
+                        class="form-control"
+                        id="description"
+                        name="description"
+                        placeholder="Enter description"
+                      ></textarea>
+                      <div class="input-group-append">
+                        <span class="input-group-text">
+                          <i class="fa fa-comment"></i>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="client">Client:</label>
+                    <select class="form-control" id="client" name="client" required>
+                      {% for client in clients %}
+                      <option value="{{ client.id }}">{{ client.name }} (ID: {{ client.id }})</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="file">File:</label>
+                    <div class="input-group">
+                      <input
+                        type="file"
+                        class="form-control-file"
+                        id="file"
+                        name="file"
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text">
+                          <i class="fa fa-upload"></i>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-center mb-3">
+                    <button name="project" value="project" type="submit" class="btn btn-success">Submit</button>
+                  </div>
+                </form>
+              </div>
+              <div class="text-center">
+                <button id="toggle-project-form-btn" class="btn btn-info">Create New Project</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+    var formVisible = false;
+    var formContainer = document.getElementById("client-form");
+    var toggleButton = document.getElementById("toggle-form-btn");
+
+    toggleButton.addEventListener("click", function () {
+        if (formVisible) {
+            formContainer.style.display = "none";
+            toggleButton.textContent = "Create New Client";
+        } else {
+            formContainer.style.display = "block";
+            toggleButton.textContent = "Hide";
+        }
+        formVisible = !formVisible;
+    });
+
+    var tutorFormVisible = false;
+    var tutorFormContainer = document.getElementById("tutor-form");
+    var toggleTutorButton = document.getElementById("toggle-tutor-form-btn");
+
+    toggleTutorButton.addEventListener("click", function () {
+        if (tutorFormVisible) {
+            tutorFormContainer.style.display = "none";
+            toggleTutorButton.textContent = "Create New Tutor";
+        } else {
+            tutorFormContainer.style.display = "block";
+            toggleTutorButton.textContent = "Hide";
+        }
+        tutorFormVisible = !tutorFormVisible;
+    });
+
+    var projectFormVisible = false;
+    var projectFormContainer = document.getElementById("project-form");
+    var toggleProjectButton = document.getElementById("toggle-project-form-btn");
+
+    toggleProjectButton.addEventListener("click", function () {
+        if (projectFormVisible) {
+            projectFormContainer.style.display = "none";
+            toggleProjectButton.textContent = "Create New Project";
+        } else {
+            projectFormContainer.style.display = "block";
+            toggleProjectButton.textContent = "Hide";
+        }
+        projectFormVisible = !projectFormVisible;
+    });
+</script>
+{% endblock %}
