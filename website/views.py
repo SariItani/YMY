@@ -1,3 +1,4 @@
+import calendar
 from flask import Blueprint, redirect, render_template, request, send_file, url_for
 from flask_login import login_required
 from sqlalchemy import and_, inspect, extract, func
@@ -96,13 +97,29 @@ def pending_table():
             project.tutor_id = tutor_id
             db.session.commit()
         elif request.form.get('whatsapp'):
-            project_id=request.form.get('whatsapp')
+            project_id = request.form.get('whatsapp')
             tutor_phone = request.form.get(f'tutor-phone-{project_id}')
+            print(tutor_phone)
+            project = Projects.query.get(project_id)
+            tutor_id = request.form.get(f'tutor-id-{project_id}')
+            print(tutor_id)
+            project.add_tutor_received(tutor_id)
+            db.session.commit()
+            # whatsapp api to process sending the file and a message to the tutors and the clients
     pending_table = Projects.query.filter_by(status='pending').all()
     for project in pending_table:
         project.created_at = get_js_time(project.created_at)
     tutors = Tutors.query.all()
-    return render_template("/pending_table.html", pending_table=pending_table, tutors=tutors)
+    clients = Clients.query.all()
+    client_names = {}
+    for client in clients:
+        client_names[client.id] = f"{client.name} (ID: {client.id})"
+    projects = Projects.query.all()
+    project_client_dict = {}
+    for project in projects:
+        project_client_dict[project.id] = client_names.get(
+            project.client_id, '')
+    return render_template("/pending_table.html", pending_table=pending_table, tutors=tutors, project_client_dict=project_client_dict)
 
 
 @views.route('/progress-table', methods=['POST', 'GET'])
@@ -114,11 +131,11 @@ def progress_table():
         elif request.form.get('complete'):
             projectId = request.form.get('complete')
             project = Projects.query.get(projectId)
-            project.status='Complete'
+            project.status = 'Complete'
             file = request.files.get(f'tutor-file-{projectId}')
-            gain=request.form.get(f'gain-{projectId}')
-            project.gain=gain
-            project.at_client=datetime.utcnow()
+            gain = request.form.get(f'gain-{projectId}')
+            project.gain = gain
+            project.at_client = datetime.utcnow()
             db.session.commit()
             if file:
                 if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS:
@@ -144,25 +161,31 @@ def reports():
         elif request.form.get('query_type'):
             query_type = request.form.get('query_type')
             if query_type == 'month':
-                months_data = db.session.query(func.extract('month', Projects.at_client)).distinct().all()
+                months_data = db.session.query(func.extract(
+                    'month', Projects.at_client)).distinct().all()
                 monthly_data = {}
                 for month_tuple in months_data:
                     month_number = month_tuple[0]
-                    month_projects = Projects.query.filter(func.extract('month', Projects.at_client) == month_number).all()
+                    if month_number:
+                        month_name = calendar.month_name[month_number] 
+                        month_projects = Projects.query.filter(func.extract(
+                            'month', Projects.at_client) == month_number).all()
                     revenue = 0
-                    tutor_data = []
-                    client_data = []
-                    university_data = []
-                    department_data = []
+                    tutor_data = set()
+                    client_data = set()
+                    university_data = set()
+                    department_data = set()
+                    print(month_projects)
                     for project in month_projects:
-                        revenue += project.price - project.gain
-                        tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
-                        tutor_data.append(tutor_name_id)
-                        client_name_id = f"{project.client.name} (ID: {project.client.id})"
-                        client_data.append(client_name_id)
-                        university_data.append(project.client.university)
-                        department_data.append(project.department)
-                    monthly_data[month_number] = {
+                        if (project.price and project.gain):
+                            revenue += project.price - project.gain
+                            tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
+                            tutor_data.add(tutor_name_id)
+                            client_name_id = f"{project.client.name} (ID: {project.client.id})"
+                            client_data.add(client_name_id)
+                            university_data.add(project.client.university)
+                            department_data.add(project.department)
+                    monthly_data[month_name] = {
                         'Revenue': revenue,
                         'Tutors': tutor_data,
                         'Clients': client_data,
@@ -172,32 +195,38 @@ def reports():
                 for month_data in monthly_data.values():
                     month_data['Tutors'] = ', '.join(month_data['Tutors'])
                     month_data['Clients'] = ', '.join(month_data['Clients'])
-                    month_data['Universities'] = ', '.join(month_data['Universities'])
-                    month_data['Departments'] = ', '.join(month_data['Departments'])
+                    month_data['Universities'] = ', '.join(
+                        month_data['Universities'])
+                    month_data['Departments'] = ', '.join(
+                        month_data['Departments'])
                 headers = list(next(iter(monthly_data.values())).keys())
-                headers.insert(0, 'Month #nb')
+                headers.insert(0, 'Month')
                 print(headers)
                 print(monthly_data)
                 return render_template("/reports.html", query_type=query_type, data=monthly_data, headers=headers)
             elif query_type == 'department':
-                departments_data = db.session.query(Projects.department).distinct().all()
+                departments_data = db.session.query(
+                    Projects.department).distinct().all()
                 department_data = {}
                 for department_tuple in departments_data:
                     department_name = department_tuple[0]
-                    department_projects = Projects.query.filter_by(department=department_name).all()
+                    department_projects = Projects.query.filter_by(
+                        department=department_name).all()
                     revenue = 0
-                    tutor_data = []
-                    client_data = []
-                    university_data = []
-                    project_data = []
+                    tutor_data = set()
+                    client_data = set()
+                    university_data = set()
+                    project_data = set()
                     for project in department_projects:
-                        revenue += project.price - project.gain
-                        tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
-                        tutor_data.append(tutor_name_id)
-                        client_name_id = f"{project.client.name} (ID: {project.client.id})"
-                        client_data.append(client_name_id)
-                        university_data.append(project.client.university)
-                        project_data.append(project.name)
+                        if (project.gain and project.price):
+                            revenue += project.price - project.gain
+                            tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
+                            tutor_data.add(tutor_name_id)
+                            client_name_id = f"{project.client.name} (ID: {project.client.id})"
+                            client_data.add(client_name_id)
+                            university_data.add(project.client.university)
+                            project_data.add(
+                                f"{project.name} (ID: {project.id})")
                     department_data[department_name] = {
                         'Revenue': revenue,
                         'Tutors': ', '.join(tutor_data),
@@ -205,28 +234,33 @@ def reports():
                         'Universities': ', '.join(university_data),
                         'Projects': ', '.join(project_data)
                     }
-                headers = list(next(iter(department_data.values())).keys()) if department_data else ['Department']
+                headers = list(next(iter(department_data.values())).keys(
+                )) if department_data else ['Department']
                 headers.insert(0, 'Department')
                 return render_template("/reports.html", query_type=query_type, data=department_data, headers=headers)
             elif query_type == 'uni':
-                universities_data = db.session.query(Clients.university).distinct().all()
+                universities_data = db.session.query(
+                    Clients.university).distinct().all()
                 university_data = {}
                 for university_tuple in universities_data:
                     university_name = university_tuple[0]
-                    university_projects = Projects.query.join(Clients).filter(Clients.university == university_name).all()
+                    university_projects = Projects.query.join(Clients).filter(
+                        Clients.university == university_name).all()
                     revenue = 0
-                    tutor_data = []
-                    client_data = []
+                    tutor_data = set()
+                    client_data = set()
                     department_data = set()
-                    project_data = []
+                    project_data = set()
                     for project in university_projects:
-                        revenue += project.price - project.gain
-                        tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
-                        tutor_data.append(tutor_name_id)
-                        client_name_id = f"{project.client.name} (ID: {project.client.id})"
-                        client_data.append(client_name_id)
-                        department_data.add(project.department)  # Use set to collect unique department names
-                        project_data.append(project.name)
+                        if (project.price and project.gain):
+                            revenue += project.price - project.gain
+                            tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
+                            tutor_data.add(tutor_name_id)
+                            client_name_id = f"{project.client.name} (ID: {project.client.id})"
+                            client_data.add(client_name_id)
+                            department_data.add(project.department)
+                            project_data.add(
+                                f"{project.name} (ID: {project.id})")
                     university_data[university_name] = {
                         'Revenue': revenue,
                         'Tutors': ', '.join(tutor_data),
@@ -234,7 +268,8 @@ def reports():
                         'Departments': ', '.join(department_data),
                         'Projects': ', '.join(project_data)
                     }
-                headers = ['University', 'Revenue', 'Tutors', 'Clients', 'Departments', 'Projects']
+                headers = ['University', 'Revenue', 'Tutors',
+                           'Clients', 'Departments', 'Projects']
                 return render_template("/reports.html", query_type=query_type, data=university_data, headers=headers)
     return render_template("/reports.html")
 
@@ -283,7 +318,8 @@ def entries():
             price = float(request.form.get('price'))
             description = request.form.get('description')
             client_id = request.form.get('client')
-            project = Projects(name=name, department=department, due=due, price=price, description=description, client_id=client_id, status='pending')
+            project = Projects(name=name, department=department, due=due, price=price,
+                               description=description, client_id=client_id, status='pending')
             db.session.add(project)
             db.session.commit()
             file = request.files.get('file')

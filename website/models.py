@@ -46,6 +46,18 @@ class Projects(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     at_tutor = db.Column(db.DateTime)
     at_client = db.Column(db.DateTime)
+    tutors_received = db.Column(db.PickleType)
+
+    def add_tutor_received(self, tutor_id):
+        if self.tutors_received is None:
+            self.tutors_received = set()
+        self.tutors_received.add(tutor_id)
+        db.session.commit()
+
+    def get_tutors_received(self):
+        if self.tutors_received is None:
+            return set()
+        return self.tutors_received
 
 
 class Clients(db.Model):
