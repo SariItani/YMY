@@ -8,6 +8,9 @@ from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
 import urllib.parse
+import zipfile
+import shutil
+
 
 views = Blueprint('views', __name__)
 
@@ -15,8 +18,8 @@ current_path = os.path.abspath(__file__)
 current_directory = os.path.dirname(current_path)
 relative_upload_folder = 'projects'
 UPLOAD_FOLDER = os.path.join(current_directory, relative_upload_folder)
-ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt', 'xlsx', 'pptx',
-                      'odt', 'odf', 'ods', 'zip', '7z', 'png', 'jpg', 'csv', 'tsv'}
+ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc', 'txt', 'xlsx', 'xls', 'pptx', 'ppt',
+                      'odt', 'odf', 'ods', 'zip', '7z', 'png', 'jpg', 'csv', 'tsv', 'html', 'jpeg', 'gif', 'js', 'py'}
 
 
 def convert(value, data_type):
@@ -55,12 +58,30 @@ def get_modified_results(results, headers, objects):
         for header in headers:
             cell = getattr(row, header)
             if cell is not None:
-                if header in objects:
+                if header == 'tutors_received':
+                    # Convert the string to a list of IDs
+                    tutor_ids = json.loads(cell) if cell else []
+                    tutor_names = []
+                    for tutor_id in tutor_ids:
+                        # Get the tutor from the database using the ID
+                        tutor = Tutors.query.get(tutor_id)
+                        if tutor is not None:
+                            tutor_names.append(
+                                f"{tutor.name} (ID: {tutor.id})")
+                    modified_row[header] = ', '.join(tutor_names)
+                elif header == 'projects':
+                    project_names = []
+                    for project in cell:
+                        if project.status != 'Complete':
+                            project_names.append(
+                                f"{project.name} (ID: {project.id})")
+                    modified_row[header] = ', '.join(project_names)
+                elif header in objects:
                     if isinstance(cell, list):
                         modified_row[header] = ', '.join(
-                            f'{item.id}_{item.name}' for item in cell)
+                            f'{item.name} ({item.id})' for item in cell)
                     else:
-                        modified_row[header] = f'{cell.id}_{cell.name}'
+                        modified_row[header] = f'{cell.name} (ID: {cell.id})'
                 else:
                     modified_row[header] = cell
             else:
@@ -94,7 +115,18 @@ def pending_table():
             project.at_tutor = datetime.utcnow()
             project.status = "In-Progress"
             tutor_id = request.form.get(f'tutor-id-{project_id}')
-            project.tutor_id = tutor_id
+            if tutor_id == "all":
+                department = project.department
+                tutor = Tutors.query.filter_by(department=department).first()
+                if tutor:
+                    # change this to something else later on, we need to make it a list
+                    project.tutor_id = tutor.id
+            else:
+                project.tutor_id = tutor_id
+            expected_due = request.form.get(f'expected-due-{project_id}')
+            if expected_due:
+                project.expected_due = datetime.strptime(
+                    expected_due, '%Y-%m-%dT%H:%M')
             db.session.commit()
         elif request.form.get('whatsapp'):
             project_id = request.form.get('whatsapp')
@@ -103,7 +135,13 @@ def pending_table():
             project = Projects.query.get(project_id)
             tutor_id = request.form.get(f'tutor-id-{project_id}')
             print(tutor_id)
-            project.add_tutor_received(tutor_id)
+            if tutor_id == "all":
+                department = project.department
+                all_tutors = Tutors.query.filter_by(department=department)
+                for each in all_tutors:
+                    project.add_tutor_received(each.id)
+            else:
+                project.add_tutor_received(int(tutor_id))
             db.session.commit()
             # whatsapp api to process sending the file and a message to the tutors and the clients
     pending_table = Projects.query.filter_by(status='pending').all()
@@ -128,28 +166,53 @@ def progress_table():
     if request.method == 'POST':
         if request.form.get('logout') == 'logout':
             return redirect(url_for('auth.logout'))
-        elif request.form.get('complete'):
-            projectId = request.form.get('complete')
+        elif 'complete' in request.form:
+            projectId = request.form['complete']
             project = Projects.query.get(projectId)
             project.status = 'Complete'
-            file = request.files.get(f'tutor-file-{projectId}')
+            files = request.files.getlist(f'tutor-file-{projectId}[]')
+            print(f'tutor-file-{projectId}[]')
+            print(files)
             gain = request.form.get(f'gain-{projectId}')
             project.gain = gain
             project.at_client = datetime.utcnow()
             db.session.commit()
-            if file:
-                if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS:
-                    filename = secure_filename(file.filename)
-                    path = os.path.join(
-                        'tutor-projects', project.department, f"{project.name}_{projectId}", filename)
-                    os.makedirs(os.path.dirname(path), exist_ok=True)
-                    file.save(path)
-                    project.fileTutor = path
-                    db.session.commit()
+            if files:
+                print("I received files...")
+                directory = os.path.join(
+                    'tutor-projects', project.department, f"{project.name}_{project.id}")
+                os.makedirs(directory, exist_ok=True)
+                print("i am making a directory...")
+                for file in files:
+                    if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS:
+                        filename = secure_filename(file.filename)
+                        path = os.path.join(directory, filename)
+                        file.save(path)
+                        print(f"I added {filename}...")
+                zip_filename = f"{project.name}_{project.id}.zip"
+                print(f"I am creating the zip file {zip_filename}...")
+                zip_path = os.path.join(directory, zip_filename)
+                with zipfile.ZipFile(zip_path, 'w') as zip_file:
+                    for file in files:
+                        filename = secure_filename(file.filename)
+                        file_path = os.path.join(directory, filename)
+                        zip_file.write(file_path, filename)
+                        os.remove(file_path)
+                project.fileTutor = zip_path
+                db.session.commit()
     progress_table = Projects.query.filter_by(status='In-Progress').all()
     tutor_ids = [project.tutor_id for project in progress_table]
     tutors = Tutors.query.filter(Tutors.id.in_(tutor_ids)).all()
-    return render_template("/progress_table.html", progress_table=progress_table, tutors=tutors)
+    clients = Clients.query.all()
+    client_names = {}
+    for client in clients:
+        client_names[client.id] = f"{client.name} (ID: {client.id})"
+    projects = Projects.query.all()
+    project_client_dict = {}
+    for project in projects:
+        project_client_dict[project.id] = client_names.get(
+            project.client_id, '')
+    return render_template("/progress_table.html", progress_table=progress_table, tutors=tutors, project_client_dict=project_client_dict)
 
 
 @views.route('/reports', methods=["POST", "GET"])
@@ -167,31 +230,30 @@ def reports():
                 for month_tuple in months_data:
                     month_number = month_tuple[0]
                     if month_number:
-                        month_name = calendar.month_name[month_number] 
+                        month_name = calendar.month_name[month_number]
                         month_projects = Projects.query.filter(func.extract(
                             'month', Projects.at_client) == month_number).all()
-                    revenue = 0
-                    tutor_data = set()
-                    client_data = set()
-                    university_data = set()
-                    department_data = set()
-                    print(month_projects)
-                    for project in month_projects:
-                        if (project.price and project.gain):
-                            revenue += project.price - project.gain
-                            tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
-                            tutor_data.add(tutor_name_id)
-                            client_name_id = f"{project.client.name} (ID: {project.client.id})"
-                            client_data.add(client_name_id)
-                            university_data.add(project.client.university)
-                            department_data.add(project.department)
-                    monthly_data[month_name] = {
-                        'Revenue': revenue,
-                        'Tutors': tutor_data,
-                        'Clients': client_data,
-                        'Universities': university_data,
-                        'Departments': department_data
-                    }
+                        revenue = 0
+                        tutor_data = set()
+                        client_data = set()
+                        university_data = set()
+                        department_data = set()
+                        for project in month_projects:
+                            if (project.price and project.gain):
+                                revenue += project.price - project.gain
+                                tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
+                                tutor_data.add(tutor_name_id)
+                                client_name_id = f"{project.client.name} (ID: {project.client.id})"
+                                client_data.add(client_name_id)
+                                university_data.add(project.client.university)
+                                department_data.add(project.department)
+                        monthly_data[month_name] = {
+                            'Revenue': revenue,
+                            'Tutors': tutor_data,
+                            'Clients': client_data,
+                            'Universities': university_data,
+                            'Departments': department_data
+                        }
                 for month_data in monthly_data.values():
                     month_data['Tutors'] = ', '.join(month_data['Tutors'])
                     month_data['Clients'] = ', '.join(month_data['Clients'])
@@ -322,16 +384,28 @@ def entries():
                                description=description, client_id=client_id, status='pending')
             db.session.add(project)
             db.session.commit()
-            file = request.files.get('file')
-            if file:
-                if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS:
-                    filename = secure_filename(file.filename)
-                    path = os.path.join(
-                        'projects', department, f"{name}_{project.id}", filename)
-                    os.makedirs(os.path.dirname(path), exist_ok=True)
-                    file.save(path)
-                    project.fileClient = path
-                    db.session.commit()
+            files = request.files.getlist('file[]')
+            if files:
+                directory = os.path.join(
+                    'projects', department, f"{name}_{project.id}")
+                os.makedirs(directory, exist_ok=True)
+                for file in files:
+                    if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS:
+                        filename = secure_filename(file.filename)
+                        path = os.path.join(directory, filename)
+                        file.save(path)
+                zip_filename = f"{name}_{project.id}.zip"
+                zip_path = os.path.join(directory, zip_filename)
+                with zipfile.ZipFile(zip_path, 'w') as zip_file:
+                    for file in files:
+                        filename = secure_filename(file.filename)
+                        file_path = os.path.join(directory, filename)
+                        zip_file.write(file_path, filename)
+                project.fileClient = zip_path
+                db.session.commit()
+                for file in files:
+                    os.remove(os.path.join(
+                        directory, secure_filename(file.filename)))
     clients = Clients.query.all()
     return render_template("/entries.html", clients=clients)
 

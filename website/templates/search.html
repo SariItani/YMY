@@ -273,28 +273,37 @@
       </thead>
       <tbody>
         {% for row in results %}
-          <tr>
-            {% for header in headers %}
-              {% if header in ['name', 'department', 'description', 'due', 'price', 'client_id', 'university', 'number', 'email', 'gain'] %}
-                <td>
-                  <input style="width: fit-content; height: auto;" type="text" class="form-control" name="{{ header }}[]" value="{{ row[header] }}" />
-                </td>
-                {% elif header == 'fileClient' or header == 'fileTutor' %}
-                <td>
-                  <a target="_blank" href="{{ url_for('views.download_file', filepath=row[header]) }}">Download Here</a>
-                  <input type="hidden" name="{{ header }}[]" value="{{ row[header] }}">
-                </td>
-              {% elif header == 'id' %}
-                <td>{{ row.id }}</td>
-                <input type="hidden" name="{{ header }}[]" value="{{ row.id }}">
-              {% else %}
-                <td>{{ row[header] }}</td>
-                <input type="hidden" name="{{ header }}[]" value="{{ row[header] }}">
-              {% endif %}              
-            {% endfor %}
-          </tr>
+            <tr>
+                {% for header in headers %}
+                    {% if header in ['name', 'department', 'description', 'due', 'price', 'client_id', 'university', 'number', 'email', 'gain'] %}
+                    <td>
+                        <input style="width: fit-content; height: auto;" type="text" class="form-control" name="{{ header }}[]" value="{{ row[header] }}" />
+                    </td>
+                    {% elif header == 'fileClient' or header == 'fileTutor' %}
+                    <td>
+                        <a target="_blank" href="{{ url_for('views.download_file', filepath=row[header]) }}">Download Here</a>
+                        <input type="hidden" name="{{ header }}[]" value="{{ row[header] }}">
+                    </td>
+                    {% elif header == 'projects'%}
+                    {% if row.status != 'Complete' %}
+                    {% if row[header]%}
+                    <td>{{row[header]}}</td>
+                    {%else%}
+                    <td>None</td>
+                    {%endif%}
+                    {% endif %}
+                    {% elif header == 'id' %}
+                    <td>{{ row.id }}</td>
+                    <input type="hidden" name="{{ header }}[]" value="{{ row.id }}">
+                    {% else %}
+                    <td>{{ row[header] }}</td>
+                    <input type="hidden" name="{{ header }}[]" value="{{ row[header] }}">
+                    {% endif %}
+                {% endfor %}
+            </tr>
         {% endfor %}
-      </tbody>
+    </tbody>
+        
       <tfoot>
         <tr>
           {% for header in headers %}

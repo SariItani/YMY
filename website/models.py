@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from . import db
 from flask_login import UserMixin
 
@@ -46,18 +47,22 @@ class Projects(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     at_tutor = db.Column(db.DateTime)
     at_client = db.Column(db.DateTime)
-    tutors_received = db.Column(db.PickleType)
+    expected_due = db.Column(db.DateTime(timezone=True))
+    tutors_received = db.Column(db.String)
 
     def add_tutor_received(self, tutor_id):
         if self.tutors_received is None:
-            self.tutors_received = set()
-        self.tutors_received.add(tutor_id)
-        db.session.commit()
+            self.tutors_received = json.dumps([tutor_id])
+        else:
+            tutor_ids = json.loads(self.tutors_received)
+            if tutor_id not in tutor_ids:
+                tutor_ids.append(tutor_id)
+                self.tutors_received = json.dumps(tutor_ids)
 
     def get_tutors_received(self):
         if self.tutors_received is None:
-            return set()
-        return self.tutors_received
+            return []
+        return json.loads(self.tutors_received)
 
 
 class Clients(db.Model):
