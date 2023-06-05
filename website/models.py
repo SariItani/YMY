@@ -3,10 +3,6 @@ import json
 from . import db
 from flask_login import UserMixin
 
-# https://youtu.be/uZqO_PoLDi8
-# https://youtu.be/mCy52I4exTU
-# https://youtu.be/yBDHkveJUf4
-
 
 class Auth(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -35,6 +31,7 @@ class Projects(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20))
     department = db.Column(db.String(20))
+    type = db.Column(db.String(50))
     description = db.Column(db.String(150))
     due = db.Column(db.DateTime(timezone=True))
     gain = db.Column(db.Float)

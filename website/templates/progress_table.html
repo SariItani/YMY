@@ -44,9 +44,14 @@
 							><b>Pending Table</b><span class="sr-only">(current)</span></a
 						>
 					</li>
-          <li class="nav-item">
+					<li class="nav-item">
 						<a class="nav-link text-white" href="/progress-table"
 							><b>Progress Table</b><span class="sr-only"></span></a
+						>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link text-white" href="/departments-table"
+							><b>Departments Offices</b><span class="sr-only"></span></a
 						>
 					</li>
 					<li class="nav-item">
@@ -82,11 +87,11 @@
                 <thead class="thead-dark">
                   <tr>
                     <th>Client Name</th>
+					<th>Type</th>
                     <th>Description</th>
                     <th>Department</th>
                     <th>Due Date</th>
 					<th>Expected Due</th>
-                    <th>Client File</th>
                     <th>Tutor</th>
                     <th>Upload File</th>
 					<th>Gain</th>
@@ -97,11 +102,11 @@
 					{% for project in progress_table %}
 					<tr>
 					<td>{{ project_client_dict[project.id] }}</td>
+					<td>{{ project.type }}</td>
 					  <td>{{ project.description }}</td>
 					  <td>{{ project.department }}</td>
 					  <td>{{ project.due }}</td>
 					  <td>{{ project.expected_due }}</td>
-					  <td><a target="_blank" href="{{ url_for('views.download_file', filepath=project.fileClient) }}">Download Client's File</a></td>
 					  <td>
 						{% for tutor in tutors %}
 						  {% if tutor.id == project.tutor_id %}
@@ -126,11 +131,11 @@
                 <tfoot>
 					<tr>
 						<th>Client Name</th>
+						<th>Type</th>
 						<th>Description</th>
 						<th>Department</th>
 						<th>Due Date</th>
 						<th>Expected Due</th>
-						<th>Client File</th>
 						<th>Tutor</th>
 						<th>Upload File</th>
 						<th>Gain</th>

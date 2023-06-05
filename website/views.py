@@ -9,7 +9,13 @@ import os
 from datetime import datetime
 import urllib.parse
 import zipfile
-import shutil
+from twilio.rest import Client
+import base64
+
+# Your Twilio account SID and auth token
+account_sid = 'your_account_sid'
+auth_token = 'your_auth_token'
+twilio = Client(account_sid, auth_token)
 
 
 views = Blueprint('views', __name__)
@@ -59,11 +65,9 @@ def get_modified_results(results, headers, objects):
             cell = getattr(row, header)
             if cell is not None:
                 if header == 'tutors_received':
-                    # Convert the string to a list of IDs
                     tutor_ids = json.loads(cell) if cell else []
                     tutor_names = []
                     for tutor_id in tutor_ids:
-                        # Get the tutor from the database using the ID
                         tutor = Tutors.query.get(tutor_id)
                         if tutor is not None:
                             tutor_names.append(
@@ -103,6 +107,42 @@ def home():
     return render_template("/home.html")
 
 
+@views.route('/departments-table', methods=['POST', 'GET'])
+@login_required
+def departments_table():
+    departments = set()
+    tutors = Tutors.query.all()
+    incomplete_projects = Projects.query.filter(
+        Projects.status != 'Complete').all()
+    tutor_client_dict = {}
+    for tutor in tutors:
+        if tutor.department not in departments:
+            departments.add(tutor.department)
+    if request.method == 'POST':
+        if request.form.get('logout') == 'logout':
+            return redirect(url_for('auth.logout'))
+        elif request.form.get('query_type'):
+            selected_department = request.form.get('query_type')
+            department_tutors = Tutors.query.filter_by(
+                department=selected_department).all()
+            tutor_name_id = [
+                f"{tutor.name} (ID: {tutor.id})" for tutor in department_tutors]
+            projects = [
+                project for project in incomplete_projects if project.department == selected_department]
+            tutor_client_dict = {}
+            for t in tutor_name_id:
+                tutor_client_dict[t] = []
+            for tutor in department_tutors:
+                tutor_id = tutor.id
+                for project in projects:
+                    if project.tutor_id == tutor_id:
+                        client_name_id = f"{project.client.name} (ID: {project.client.id})"
+                        tutor_name_id = f"{tutor.name} (ID: {tutor.id})"
+                        tutor_client_dict[tutor_name_id].append(client_name_id)
+            return render_template("/departments-table.html", departments=departments, tutor_client_dict=tutor_client_dict)
+    return render_template("/departments-table.html", departments=departments)
+
+
 @views.route('/pending-table', methods=["POST", "GET"])
 @login_required
 def pending_table():
@@ -111,23 +151,19 @@ def pending_table():
             return redirect(url_for('auth.logout'))
         elif request.form.get('send-to-tutor'):
             project_id = request.form.get('send-to-tutor')
-            project = Projects.query.get(project_id)
-            project.at_tutor = datetime.utcnow()
-            project.status = "In-Progress"
+            print(project_id)
             tutor_id = request.form.get(f'tutor-id-{project_id}')
-            if tutor_id == "all":
-                department = project.department
-                tutor = Tutors.query.filter_by(department=department).first()
-                if tutor:
-                    # change this to something else later on, we need to make it a list
-                    project.tutor_id = tutor.id
-            else:
+            print(tutor_id)
+            if tutor_id != "all":
+                project = Projects.query.get(project_id)
+                project.at_tutor = datetime.utcnow()
+                project.status = "In-Progress"
                 project.tutor_id = tutor_id
-            expected_due = request.form.get(f'expected-due-{project_id}')
-            if expected_due:
-                project.expected_due = datetime.strptime(
-                    expected_due, '%Y-%m-%dT%H:%M')
-            db.session.commit()
+                expected_due = request.form.get(f'expected-due-{project_id}')
+                if expected_due:
+                    project.expected_due = datetime.strptime(
+                        expected_due, '%Y-%m-%dT%H:%M')
+                db.session.commit()
         elif request.form.get('whatsapp'):
             project_id = request.form.get('whatsapp')
             tutor_phone = request.form.get(f'tutor-phone-{project_id}')
@@ -144,6 +180,20 @@ def pending_table():
                 project.add_tutor_received(int(tutor_id))
             db.session.commit()
             # whatsapp api to process sending the file and a message to the tutors and the clients
+            # with open(project.fileClient, 'rb') as file:
+            #     file_content = file.read()
+            #     base64_content = base64.b64encode(file_content).decode('utf-8')
+            # message = twilio.messages.create(
+            #     body='Hello!\nPlease can you do this project?',
+            #     from_='whatsapp:your_twilio_phone_number',
+            #     to=f'whatsapp:+{tutor_phone}',
+            #     media=[{
+            #         'content-type': 'application/pdf',
+            #         'filename': f'{project.name}.pdf',
+            #         'data': base64_content
+            #     }],
+            # )
+            # print(message.sid)
     pending_table = Projects.query.filter_by(status='pending').all()
     for project in pending_table:
         project.created_at = get_js_time(project.created_at)
@@ -172,12 +222,12 @@ def progress_table():
             project.status = 'Complete'
             files = request.files.getlist(f'tutor-file-{projectId}[]')
             print(f'tutor-file-{projectId}[]')
-            print(files)
+            print("FILES",files)
             gain = request.form.get(f'gain-{projectId}')
             project.gain = gain
             project.at_client = datetime.utcnow()
             db.session.commit()
-            if files:
+            if any(files):
                 print("I received files...")
                 directory = os.path.join(
                     'tutor-projects', project.department, f"{project.name}_{project.id}")
@@ -231,6 +281,7 @@ def reports():
                     month_number = month_tuple[0]
                     if month_number:
                         month_name = calendar.month_name[month_number]
+                        # if at client
                         month_projects = Projects.query.filter(func.extract(
                             'month', Projects.at_client) == month_number).all()
                         revenue = 0
@@ -274,6 +325,8 @@ def reports():
                     department_name = department_tuple[0]
                     department_projects = Projects.query.filter_by(
                         department=department_name).all()
+                    department_projects = [
+                        project for project in department_projects if project.status == "Complete"]
                     revenue = 0
                     tutor_data = set()
                     client_data = set()
@@ -308,6 +361,8 @@ def reports():
                     university_name = university_tuple[0]
                     university_projects = Projects.query.join(Clients).filter(
                         Clients.university == university_name).all()
+                    university_projects = [
+                        project for project in university_projects if project.status == 'Complete']
                     revenue = 0
                     tutor_data = set()
                     client_data = set()
@@ -374,18 +429,19 @@ def entries():
             db.session.commit()
         elif request.form.get('project') == 'project':
             name = request.form.get('name')
+            type = request.form.get('type')
             department = request.form.get('department').lower()
             due_str = request.form.get('due')
             due = datetime.strptime(due_str, '%Y-%m-%dT%H:%M')
             price = float(request.form.get('price'))
             description = request.form.get('description')
             client_id = request.form.get('client')
-            project = Projects(name=name, department=department, due=due, price=price,
+            project = Projects(name=name,type=type, department=department, due=due, price=price,
                                description=description, client_id=client_id, status='pending')
             db.session.add(project)
             db.session.commit()
             files = request.files.getlist('file[]')
-            if files:
+            if any(files):
                 directory = os.path.join(
                     'projects', department, f"{name}_{project.id}")
                 os.makedirs(directory, exist_ok=True)
@@ -414,7 +470,6 @@ def entries():
 @login_required
 def search():
     if request.method == 'POST':
-        # excluded_headers = ['__module__', '__doc__', '__tablename__', '_sa_class_manager', '__table__', '__init__', '__mapper__', 'tutor_id', 'client_id']
         objects = ['client', 'tutor', 'projects']
         if request.form.get('logout') == 'logout':
             return redirect(url_for('auth.logout'))
@@ -457,6 +512,7 @@ def search():
             return render_template("search.html", results=modified_results, headers=headers)
         elif request.form.get('project') == 'project':
             search_query_name = request.form.get('name').strip()
+            search_query_type = request.form.get('type').strip()
             search_query_status = request.form.get('status').strip()
             search_query_department = request.form.get('department').strip()
             search_query_due_str = request.form.get('due').strip()
@@ -464,7 +520,8 @@ def search():
                 and_(Projects.name.ilike(f'%{search_query_name}%'),
                      Projects.department.ilike(f'%{search_query_department}%'),
                      Projects.due.ilike(f'%{search_query_due_str}%'),
-                     Projects.status.ilike(f'%{search_query_status}%')
+                     Projects.status.ilike(f'%{search_query_status}%'),
+                     Projects.type.ilike(f'%{search_query_type}%')
                      )
             ).all()
             results = projects_filtered

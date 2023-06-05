@@ -170,7 +170,7 @@
         <div class="col-">
             <div class="card my-4">
                 <div class="card-header">
-                    <h1 class="card-title text-center">Search Projects</h1>
+                    <h1 class="card-title text-center">Search Tasks</h1>
                 </div>
                 <div class="card-body">
                     <div id="project-form">
@@ -185,6 +185,23 @@
                                     name="name"
                                     placeholder="Enter name"
                                     autofocus
+                                  />
+                                  <div class="input-group-append">
+                                    <span class="input-group-text">
+                                      <i class="fa fa-file"></i>
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="form-group">
+                                <label for="name">Fitler by Type:</label>
+                                <div class="input-group">
+                                  <input
+                                    type="text"
+                                    class="form-control"
+                                    id="type"
+                                    name="type"
+                                    placeholder="Enter type"
                                   />
                                   <div class="input-group-append">
                                     <span class="input-group-text">
@@ -275,7 +292,7 @@
         {% for row in results %}
             <tr>
                 {% for header in headers %}
-                    {% if header in ['name', 'department', 'description', 'due', 'price', 'client_id', 'university', 'number', 'email', 'gain'] %}
+                    {% if header in ['name', 'department', 'description', 'due', 'price', 'client_id', 'university', 'number', 'email', 'gain', 'type'] %}
                     <td>
                         <input style="width: fit-content; height: auto;" type="text" class="form-control" name="{{ header }}[]" value="{{ row[header] }}" />
                     </td>
