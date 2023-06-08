@@ -21,7 +21,7 @@ def create_app():
 
     app.jinja_env.filters['is_instance'] = is_instance
 
-    from .models import Auth, Tutors, Projects, Clients
+    from .models import Auth, Tutors, Projects
     from .views import views
     from .auth import auth
     from .admin import admin

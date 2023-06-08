@@ -5,6 +5,7 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" href="/static/logo.png" />
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 		<link
 			rel="stylesheet"
 			href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.2/css/bootstrap.css"
@@ -14,6 +15,7 @@
 			href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap4.min.css"
 		/>
 		<title>Pending Table</title>
+        <link rel="stylesheet" href="/static/pending_table.css">
 	</head>
 	<body>
 		<nav class="navbar navbar-expand-lg navbar-light bg-info">
@@ -23,7 +25,6 @@
 					width="32"
 					height="32"
 					class="d-inline-block align-top mr-2"
-					alt=""
 				/><b>YMY Agency</b></a
 			>
 			<button
@@ -81,18 +82,27 @@
 			</div>
 		</nav>
     <form method="POST" id="pending-table-form" name="pending-table-form">
-      <div class="container mt-4">
+      <div class="mt-1">
+        <div id="confirmModal" style="display: none;">
+            <div class="modal-content">
+              <span class="close">&times;</span>
+              <label for="expected-due">Expected Due Date:</label>
+              <input type="datetime-local" id="expected-due" class="form-control">
+              <button class="btn btn-primary" id="confirmBtn">Confirm</button>
+            </div>
+          </div>          
           <div class="table-responsive">
-              <table id="pending_table" class="table table-striped table-bordered table-info" style="width: 100%">
+              <table id="pending_table" class="table table-striped table-bordered table-info" style="width: 100%;">
                   <thead class="thead-dark">
                       <tr>
                           <th>Client Name</th>
                           <th>Type</th>
-                          <th>Description</th>
+                          <th>Course Name</th>
                           <th>Department</th>
+                          <th>Description</th>
+                          <th>Client File</th>
                           <th>Due Date</th>
                           <th>Timer</th>
-                          <th>Expected Due</th>
                           <th>Select Tutor</th>
                           <th>Confirm Tutor</th>
                           <th>Send Whatsapp</th>
@@ -102,15 +112,26 @@
                   <tbody>
                       {% for project in pending_table %}
                       <tr>
-                          <td>{{ project_client_dict[project.id] }}</td>
+                          <td>{{ project.client_name }}</td>
                           <td>{{ project.type }}</td>
-                          <td>{{ project.description }}</td>
+                          <td>{{ project.name }}</td>
                           <td>{{ project.department }}</td>
-                          <td>{{ project.due }}</td>
-                          <td id="timer" name="timer" data-creation-time="{{ project.created_at }}"></td>
                           <td>
-                            <input type="datetime-local" name="expected-due-{{ project.id }}" class="form-control">
+                            {% if project.description %}
+                            {{ project.description }}
+                            {%else%}
+                            None
+                            {%endif%}
                           </td>
+                          <td>
+                            {% if project.fileClient %}
+                            <a href="/download/{{project.fileClient}}" target="_blank">Download File</a>
+                            {%else%}
+                            None Available
+                            {%endif%}
+                          </td>
+                          <td class="text-danger"><b>{{ project.due }}</b></td>
+                          <td id="timer" name="timer" data-creation-time="{{ project.created_at }}" class="text-success"></td>
                           <td>
                               <select style="width: fit-content; height: auto;" id="selected-tutor-{{ project.id }}" class="form-control">
                                 <option value="all" data-id="all" data-phone="">All {{project.department}} Tutors</option>
@@ -123,10 +144,11 @@
                               <input type="hidden" name="tutor-phone-{{ project.id }}" id="tutor-phone-{{ project.id }}" />
                               <input type="hidden" name="tutor-id-{{ project.id }}" id="tutor-id-{{ project.id }}" />
                               <input type="hidden" name="project-department-{{ project.id }}" value="{{ project.department }}" />
+                              <input type="hidden" name="expected-due-{{ project.id }}" id="expected-due-{{ project.id }}">
                           </td>
                           <td>
-                            <button class="btn btn-warning text-white" name="send-to-tutor" data-project-id="{{ project.id }}" value="{{project.id}}" onclick="validateTutorSelection('{{ project.id }}')">Confirm Now</button>
-                          </td>
+                            <button class="btn btn-warning text-white" name="send-to-tutor" data-project-id="{{ project.id }}" value="{{project.id}}" onclick="validateTutorSelection('{{ project.id }}')">Confirm</button>
+                          </td>                          
                           <td>
                               <button class="btn btn-outline-success" name="whatsapp" data-project-id="{{ project.id }}" value="{{project.id}}" onclick="inputs_hidden('{{ project.id }}')">Send Whatsapp</button>
                           </td>
@@ -134,15 +156,19 @@
                             {% if project.tutors_received is none %}
                               None
                             {% elif project.tutors_received %}
-                            {% for tutor in tutors %}
-                              {% for tutor_id in project.tutors_received %}
-                                {% if tutor.id == tutor_id|int %}
-                                <b>&#x25cf;</b> {{ tutor.name }} ({{ tutor.id }})
-                                {% endif %}
+                              {% set tutorList = [] %}
+                              {% for tutor in tutors %}
+                                {% for tutor_id in project.tutors_received %}
+                                  {% if tutor.id == tutor_id|int %}
+                                    {% set _ = tutorList.append(tutor.name ~ ' (ID: ' ~ tutor.id ~ ')') %}
+                                  {% endif %}
+                                {% endfor %}
                               {% endfor %}
-                              {% endfor %}
+                              {% if tutorList %}
+                                <button class="btn btn-link" onclick="showTutors('{{ tutorList|join(', ') }}')">View Tutors</button>
+                              {% endif %}
                             {% endif %}
-                        </td>
+                          </td>
                       </tr>
                       {% endfor %}
                   </tbody>
@@ -150,11 +176,12 @@
                       <tr>
                           <th>Client Name</th>
                           <th>Type</th>
-                          <th>Description</th>
+                          <th>Course Name</th>
                           <th>Department</th>
+                          <th>Description</th>
+                          <th>Client File</th>
                           <th>Due Date</th>
                           <th>Timer</th>
-                          <th>Expected Due</th>
                           <th>Select Tutor</th>
                           <th>Confirm Tutor</th>
                           <th>Send Whatsapp</th>
@@ -164,10 +191,180 @@
               </table>
           </div>
       </div>
-  </form>  
+  </form>
+  <div class="col justify-content-center text-center">
+    <div class="col" style="max-width: 65%; max-height: 30%; padding-left: 35%; padding-bottom: 10%;">
+      <div class="card my-4" style="background-color: rgb(122, 206, 255);">
+        <div class="card-header" style="background-color: rgb(56, 86, 255);">
+          <h1 class="card-title text-center text-white">New Task</h1>
+        </div>
+        <div class="card-body">
+          <div id="project-form" style="display: none">
+            <form method="POST" name="project" enctype="multipart/form-data">
+                  <div class="form-group">
+                    <label for="name">Course Name:</label>
+                    <div class="input-group">
+                      <input
+                        type="text"
+                        class="form-control text-center"
+                        id="name"
+                        name="name"
+                        placeholder="Enter course name"
+                        autofocus
+                        required
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text">
+                            <i class="material-icons">&#xe7ff;</i>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="department">Department:</label>
+                    <select class="form-control text-center" name="dpt" id="dpt" required>
+                      {%for dpt in departments%}
+                      <option value="{{dpt}}">{{dpt}}</option>
+                      {%endfor%}
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="type">Type:</label>
+                    <select class="form-control text-center" id="type" name="type" required>
+                      <option value="project">Project</option>
+                      <option value="assignment">Assignment</option>
+                      <option value="exam">Exam</option>
+                      <option value="class">Class</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="price">Price:</label>
+                    <div class="input-group">
+                      <input
+                        type="number"
+                        class="form-control text-center"
+                        id="price"
+                        name="price"
+                        placeholder="Enter price"
+                        required
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text">
+                          <i class="material-icons">&#xe227;</i>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="description">Description:</label>
+                    <div class="input-group">
+                      <textarea
+                        class="form-control text-center"
+                        id="description"
+                        name="description"
+                        placeholder="Enter description"
+                      ></textarea>
+                      <div class="input-group-append">
+                        <span class="input-group-text">
+                          <i class="material-icons">&#xe0b9;</i>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="client">Client Name:</label>
+                    <div class="input-group">
+                      <input
+                        type="text"
+                        class="form-control text-center"
+                        id="client"
+                        name="client"
+                        placeholder="Enter client name"
+                        required
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text">
+                          <i class="material-icons">&#xe7ef;</i>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="university">Client University:</label>
+                    <div class="input-group">
+                      <input
+                        type="text"
+                        class="form-control text-center"
+                        id="university"
+                        name="university"
+                        placeholder="Enter university name"
+                        required
+                      />
+                      <div class="input-group-append">
+                        <span class="input-group-text">
+                            <i class="material-icons">&#xe80c;</i>
+                        </span>
+                    </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="due">Due Date and Time:</label>
+                    <div class="input-group">
+                        <input
+                            type="datetime-local"
+                            class="form-control text-center"
+                            id="due"
+                            name="due"
+                            required
+                        />
+                        <div class="input-group-append">
+                            <span class="input-group-text">
+                                <i class="material-icons">&#xe8a3;</i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="row justify-content-center align-items-center"> 
+                      <label class="col-3 ml-0 text-center" for="file">Files:</label>
+                      <div class="col-9 text-center">
+                        <div class="input-group d-flex justify-content-center">
+                          <input
+                            type="file"
+                            class="form-control-file"
+                            id="file"
+                            name="file[]"
+                            multiple
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-center mb-3">
+                    <button name="task" value="task" type="submit" class="btn btn-success">Submit</button>
+                  </div>
+                </form>
+            </div>
+            <div class="text-center">
+                <button name="new-task" id="new-task" type="submit" onclick="toggleForm()" class="btn btn-warning">Add New Task</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 		<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
 		<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
 		<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap4.min.js"></script>
+		<script
+			src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+			integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+			crossorigin="anonymous"
+		></script>
+		<script
+			src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+			integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+			crossorigin="anonymous"
+		></script>
 		<script>
 			$(document).ready(function () {
 				$("#pending_table").DataTable();
@@ -206,27 +403,60 @@
                 var tutorPhone = tutorSelect.options[tutorSelect.selectedIndex].getAttribute('data-phone');
                 var tutorPhoneInput = document.getElementById(`tutor-phone-${projectId}`);
                 tutorPhoneInput.value = tutorPhone;
-                console.log(tutorPhoneInput.value);
             }
             function getTutorID(projectId) {
               var tutorSelect = document.getElementById(`selected-tutor-${projectId}`);
               var tutorId = tutorSelect.options[tutorSelect.selectedIndex].getAttribute(`data-id`);
               var tutorIdInput = document.getElementById(`tutor-id-${projectId}`);
               tutorIdInput.value = tutorId;
-              console.log(tutorId);
             }
             function inputs_hidden(projectId) {
               getTutorPhoneNumber(projectId);
               getTutorID(projectId);
             }
             function validateTutorSelection(projectId) {
-                var tutorSelect = document.getElementById(`selected-tutor-${projectId}`);
-                var selectedValue = tutorSelect.options[tutorSelect.selectedIndex].value;
-                inputs_hidden(projectId);
-                if (selectedValue === "all") {
-                    alert("Please choose a specific tutor for the project.");   
-                }
+              var tutorSelect = document.getElementById(`selected-tutor-${projectId}`);
+              var selectedValue = tutorSelect.options[tutorSelect.selectedIndex].value;
+              inputs_hidden(projectId);
+              if (selectedValue === "all") {
+                alert("Please choose a specific tutor for the project.");
+              } else {
+                showExpectedDuePopup(projectId);
+              }
             }
         </script>
+        <script>
+          function showExpectedDuePopup(projectId) {
+            var expectedDue = prompt("Enter the expected due date (YYYY-MM-DD HH:MM):");
+            if (expectedDue !== null) {
+              var expectedDueInput = document.getElementById(`expected-due`);
+              expectedDueInput.value = expectedDue;
+              console.log(expectedDueInput.value);
+              var expectedDueHidden = document.getElementById(`expected-due-${projectId}`)
+              expectedDueHidden.value = expectedDue;
+              console.log(expectedDueHidden.value);
+              // document.getElementById("pending-table-form").submit();
+            }
+          }
+        </script>
+        <script>
+            function toggleForm() {
+              var form = document.getElementById("project-form");
+              var button = document.querySelector("new-task");
+          
+              if (form.style.display === "none") {
+                form.style.display = "block";
+                button.textContent = "Hide";
+              } else if (form.style.display === "block") {
+                form.style.display = "none";
+                button.textContent = "Add New Task";
+              }
+            }
+          </script>
+          <script>
+            function showTutors(tutorsList) {
+              alert(tutorsList);
+            }
+          </script>
 	</body>
 </html>

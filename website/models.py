@@ -19,7 +19,7 @@ class Tutors(db.Model):
     name = db.Column(db.String(20))
     department = db.Column(db.String(20))
     number = db.Column(db.String(20))
-    email = db.Column(db.String(50), unique=True)
+    email = db.Column(db.String(50))
     projects = db.relationship('Projects', backref='tutor', lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
@@ -37,8 +37,9 @@ class Projects(db.Model):
     gain = db.Column(db.Float)
     price = db.Column(db.Float)
     status = db.Column(db.String(15))
+    university = db.Column(db.String(15))
     tutor_id = db.Column(db.Integer, db.ForeignKey('tutors.id'))
-    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
+    client_name = db.Column(db.String(20))
     fileTutor = db.Column(db.String(50))
     fileClient = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -60,17 +61,3 @@ class Projects(db.Model):
         if self.tutors_received is None:
             return []
         return json.loads(self.tutors_received)
-
-
-class Clients(db.Model):
-    # ID	Name	Uni	Deparment	Nb.	Email
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(20))
-    university = db.Column(db.String(20))
-    department = db.Column(db.String(20))
-    number = db.Column(db.String(20))
-    email = db.Column(db.String(50), unique=True)
-    projects = db.relationship('Projects', backref='client', lazy=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

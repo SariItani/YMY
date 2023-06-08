@@ -1,0 +1,17 @@
+tr {
+	max-height: 10px;
+	overflow-y: auto;
+}
+
+table {
+	table-layout: auto;
+}
+
+td,
+th {
+	max-width: fit-content;
+	font-size: medium;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
