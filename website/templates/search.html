@@ -1,6 +1,7 @@
 {% extends 'base.html' %} 
 {% block title %}Search{% endblock %} 
 {% block container%}
+<div class="ml-2 mr-2">
     <div class="row">
     <div class="col justify-content-center">
         <div class="col-">
@@ -66,7 +67,7 @@
                 </div>
             </div>
         </div>
-    </div>    
+    </div>
     <div class="col justify-content-center">
         <div class="col-">
             <div class="card my-4">
@@ -183,10 +184,15 @@
                         <input style="width: fit-content; height: auto;" type="text" class="form-control" name="{{ header }}[]" value="{{ row[header] }}" />
                     </td>
                     {% elif header == 'fileClient' or header == 'fileTutor' %}
+                    {% if row[header] != 'None' %}
                     <td>
                         <a target="_blank" href="{{ url_for('views.download_file', filepath=row[header]) }}">Download Here</a>
                         <input type="hidden" name="{{ header }}[]" value="{{ row[header] }}">
                     </td>
+                    {% else %}
+                    <td>None Available</td>
+                    <input type="hidden" name="{{ header }}[]" value="">
+                    {% endif %}
                     {% elif header == 'projects'%}
                     {% if row.status != 'Complete' %}
                     {% if row[header]%}
@@ -198,6 +204,26 @@
                     {% elif header == 'id' %}
                     <td>{{ row.id }}</td>
                     <input type="hidden" name="{{ header }}[]" value="{{ row.id }}">
+                    {% elif header == 'tutors_received'%}
+                    <td>
+                        {% if row.tutors_received is none %}
+                          None
+                        {% elif row.tutors_received %}
+                          {% set tutorList = [] %}
+                          {% for tutor in tutors %}
+                            {% for tutor_id in row.tutors_received %}
+                              {% if tutor.id == tutor_id|int %}
+                                {% set _ = tutorList.append(tutor.name ~ ' (ID: ' ~ tutor.id ~ ')') %}
+                              {% endif %}
+                            {% endfor %}
+                          {% endfor %}
+                          {% if tutorList %}
+                            <button class="btn btn-link" onclick="showTutors('{{ tutorList|join(', ') }}')">View Tutors</button>
+                            {%else%}
+                            None
+                            {% endif %}
+                        {% endif %}
+                    </td>
                     {% else %}
                     <td>{{ row[header] }}</td>
                     <input type="hidden" name="{{ header }}[]" value="{{ row[header] }}">
@@ -206,7 +232,6 @@
             </tr>
         {% endfor %}
     </tbody>
-        
       <tfoot>
         <tr>
           {% for header in headers %}
@@ -218,7 +243,12 @@
 </div>
     <input type="hidden" name="headers" value="{{ headers|join(',') }}">
   </form>
+</div>
 <script>
+    function showTutors(tutorsList) {
+        alert(tutorsList);
+    }
+
     var tutorFormVisible = false;
     var tutorFormContainer = document.getElementById("tutor-form");
     var toggleTutorButton = document.getElementById("toggle-tutor-form-btn");

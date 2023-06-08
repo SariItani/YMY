@@ -10,7 +10,7 @@
                     <h1 class="card-title text-center">New Department</h1>
                 </div>
                 <div class="card-body">
-                    <div id="department-form" style="display: block">
+                    <div id="department-form" style="display: none">
                         <form method="POST" name="department">
                             <div class="form-group">
                                 <label for="name">Department Name:</label>
@@ -35,6 +35,9 @@
                             </div>
                         </form>
                     </div>
+                    <div class="text-center">
+                        <button id="toggle-department-form-btn" class="btn btn-info">Create New Department</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -46,7 +49,7 @@
                     <h1 class="card-title text-center">New Tutor</h1>
                 </div>
                 <div class="card-body">
-                    <div id="tutor-form" style="display: block">
+                    <div id="tutor-form" style="display: none">
                         <form method="POST" name="tutor">
                             <div class="form-group">
                                 <label for="name">Name:</label>
@@ -115,10 +118,49 @@
                             </div>
                         </form>
                     </div>
+                    <div class="text-center">
+                        <button id="toggle-tutor-form-btn" class="btn btn-info">Create New Tutor</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 </div>
+<script>
+    var tutorFormVisible = false;
+    var tutorFormContainer = document.getElementById("tutor-form");
+    var toggleTutorButton = document.getElementById("toggle-tutor-form-btn");
+
+    tutorFormContainer.style.display = "none";
+
+    toggleTutorButton.addEventListener("click", function () {
+        if (tutorFormVisible) {
+            tutorFormContainer.style.display = "none";
+            toggleTutorButton.textContent = "Create New Tutor";
+        } else {
+            tutorFormContainer.style.display = "block";
+            toggleTutorButton.textContent = "Hide";
+        }
+        tutorFormVisible = !tutorFormVisible;
+    });
+
+    var departmentFormVisible = false;
+    var departmentFormContainer = document.getElementById("department-form");
+    var toggleDepartmentButton = document.getElementById("toggle-department-form-btn");
+
+    departmentFormContainer.style.display = "none";
+
+    toggleDepartmentButton.addEventListener("click", function () {
+        if (departmentFormVisible) {
+            departmentFormContainer.style.display = "none";
+            toggleDepartmentButton.textContent = "Create New Department";
+        } else {
+            departmentFormContainer.style.display = "block";
+            toggleDepartmentButton.textContent = "Hide";
+        }
+        departmentFormVisible = !departmentFormVisible;
+    });
+
+</script>
 {% endblock %}

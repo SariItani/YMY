@@ -11,12 +11,12 @@ from datetime import datetime
 import urllib.parse
 import zipfile
 from twilio.rest import Client
-import base64
 
-# Your Twilio account SID and auth token
-account_sid = 'your_account_sid'
-auth_token = 'your_auth_token'
-twilio = Client(account_sid, auth_token)
+account_sid = 'your sid'
+auth_token = 'your token'
+twilio_phone_number = '+your twilio number'
+
+client = Client(account_sid, auth_token)
 
 
 views = Blueprint('views', __name__)
@@ -27,6 +27,21 @@ relative_upload_folder = 'projects'
 UPLOAD_FOLDER = os.path.join(current_directory, relative_upload_folder)
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc', 'txt', 'xlsx', 'xls', 'pptx', 'ppt',
                       'odt', 'odf', 'ods', 'zip', '7z', 'png', 'jpg', 'csv', 'tsv', 'html', 'jpeg', 'gif', 'js', 'py'}
+
+
+def send_whatsapp_message(to_phone_number, message, file_path=None):
+    message_data = {
+        'body': message,
+        'from_': f'whatsapp:{twilio_phone_number}',
+        'to': f'whatsapp:+{to_phone_number}'
+    }
+    print(message_data)
+    if file_path:
+        media_data = {
+            'media_url': file_path
+        }
+        message_data.update(media_data)
+    return client.messages.create(**message_data)
 
 
 def add_department(department):
@@ -53,10 +68,6 @@ def get_departments():
 
 
 def convert(value, data_type):
-    """
-    Convert the value to the specified data type.
-    Add additional conversion logic as needed.
-    """
     if value:
         if data_type == int:
             return int(value)
@@ -135,13 +146,13 @@ def home():
 @login_required
 def departments_table():
     departments = set()
-    tutors = Tutors.query.all()
     incomplete_projects = Projects.query.filter(
         Projects.status != 'Complete').all()
     tutor_client_dict = {}
-    for tutor in tutors:
-        if tutor.department not in departments:
-            departments.add(tutor.department)
+    with open('departments.csv', 'r') as file:
+        csv_reader = csv.reader(file)
+        for row in csv_reader:
+            departments.add(row[0].strip())
     if request.method == 'POST':
         if request.form.get('logout') == 'logout':
             return redirect(url_for('auth.logout'))
@@ -176,14 +187,15 @@ def pending_table():
         elif request.form.get('task') == 'task':
             name = request.form.get('name')
             type = request.form.get('type')
+            university = request.form.get('university').upper()
             department = request.form.get('dpt').lower()
             due_str = request.form.get('due')
             due = datetime.strptime(due_str, '%Y-%m-%dT%H:%M')
             price = float(request.form.get('price'))
             description = request.form.get('description')
-            client_name = request.form.get('client')
+            client_name = request.form.get('client').lower()
             project = Projects(name=name, type=type, department=department, due=due, price=price,
-                               description=description, client_name=client_name, status='pending')
+                               description=description, client_name=client_name, status='pending', university=university)
             db.session.add(project)
             db.session.commit()
             files = request.files.getlist('file[]')
@@ -222,38 +234,30 @@ def pending_table():
                 if expected_due:
                     project.expected_due = datetime.strptime(
                         expected_due, '%Y-%m-%d %H:%M')
-                print(project_id, tutor_id, project.at_tutor, project.tutor_id, project.status, "Expected-Due:",expected_due)
+                print(project_id, tutor_id, project.at_tutor, project.tutor_id,
+                      project.status, "Expected-Due:", expected_due)
                 db.session.commit()
         elif request.form.get('whatsapp'):
             project_id = request.form.get('whatsapp')
             tutor_phone = request.form.get(f'tutor-phone-{project_id}')
-            print(tutor_phone)
             project = Projects.query.get(project_id)
             tutor_id = request.form.get(f'tutor-id-{project_id}')
-            print(tutor_id)
             if tutor_id == "all":
+                tutor_phone = set()
                 department = project.department
                 all_tutors = Tutors.query.filter_by(department=department)
                 for each in all_tutors:
                     project.add_tutor_received(each.id)
+                    tutor_phone.add(each.number)
             else:
+                tutor_phone = set([tutor_phone])
                 project.add_tutor_received(int(tutor_id))
             db.session.commit()
-            # whatsapp api to process sending the file and a message to the tutors and the clients
-            # with open(project.fileClient, 'rb') as file:
-            #     file_content = file.read()
-            #     base64_content = base64.b64encode(file_content).decode('utf-8')
-            # message = twilio.messages.create(
-            #     body='Hello!\nPlease can you do this project?',
-            #     from_='whatsapp:your_twilio_phone_number',
-            #     to=f'whatsapp:+{tutor_phone}',
-            #     media=[{
-            #         'content-type': 'application/pdf',
-            #         'filename': f'{project.name}.pdf',
-            #         'data': base64_content
-            #     }],
-            # )
-            # print(message.sid)
+            file_path = project.fileClient
+            message = f"Can you please do {project.name}?"
+            for phone in tutor_phone:
+                send_whatsapp_message(phone, message)
+            print(tutor_phone, message, file_path)
     pending_table = Projects.query.filter_by(status='pending').all()
     for project in pending_table:
         project.created_at = get_js_time(project.created_at)
@@ -312,10 +316,7 @@ def progress_table():
     progress_table = Projects.query.filter_by(status='In-Progress').all()
     tutor_ids = [project.tutor_id for project in progress_table]
     tutors = Tutors.query.filter(Tutors.id.in_(tutor_ids)).all()
-    # clients = Clients.query.all()
     client_names = {}
-    # for client in clients:
-    #     client_names[client.id] = f"{client.name} (ID: {client.id})"
     projects = Projects.query.all()
     project_client_dict = {}
     for project in projects:
@@ -333,80 +334,80 @@ def reports():
         elif request.form.get('query_type'):
             query_type = request.form.get('query_type')
             if query_type == 'month':
-                months_data = db.session.query(func.extract(
+                months_data = db.session.query(db.func.extract(
                     'month', Projects.at_client)).distinct().all()
                 monthly_data = {}
                 for month_tuple in months_data:
                     month_number = month_tuple[0]
                     if month_number:
                         month_name = calendar.month_name[month_number]
-                        # if at client
-                        month_projects = Projects.query.filter(func.extract(
+                        month_projects = Projects.query.filter(db.func.extract(
                             'month', Projects.at_client) == month_number).all()
                         revenue = 0
-                        tutor_data = set()
-                        client_data = set()
-                        university_data = set()
+                        tutor_count = 0
+                        client_count = 0
+                        university_count = 0
                         department_data = set()
+                        tutor_ids = set()
+                        client_ids = set()
+                        university_names = set()
                         for project in month_projects:
-                            if (project.price and project.gain):
+                            if project.price and project.gain:
                                 revenue += project.price - project.gain
-                                tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
-                                tutor_data.add(tutor_name_id)
-                                client_name_id = f"{project.client_name}"
-                                client_data.add(client_name_id)
-                                university_data.add(project.client.university)
-                                department_data.add(project.department)
+                            tutor_ids.add(project.tutor_id)
+                            client_ids.add(project.client_name)
+                            if project.university is not None:
+                                university_names.add(project.university)
+                            department_data.add(project.department)
+                        tutor_count = len(tutor_ids)
+                        client_count = len(client_ids)
+                        university_count = len(university_names)
+                        department_count = len(department_data)
                         monthly_data[month_name] = {
                             'Revenue': revenue,
-                            'Tutors': tutor_data,
-                            'Clients': client_data,
-                            'Universities': university_data,
-                            'Departments': department_data
+                            'Tutor Count': tutor_count,
+                            'Client Count': client_count,
+                            'University Count': university_count,
+                            'Department Count': department_count
                         }
-                for month_data in monthly_data.values():
-                    month_data['Tutors'] = ', '.join(month_data['Tutors'])
-                    month_data['Clients'] = ', '.join(month_data['Clients'])
-                    month_data['Universities'] = ', '.join(
-                        month_data['Universities'])
-                    month_data['Departments'] = ', '.join(
-                        month_data['Departments'])
-                headers = list(next(iter(monthly_data.values())).keys())
+                headers = list(next(iter(monthly_data.values())
+                                    ).keys()) if monthly_data else ['Month']
                 headers.insert(0, 'Month')
-                print(headers)
-                print(monthly_data)
                 return render_template("/reports.html", query_type=query_type, data=monthly_data, headers=headers)
             elif query_type == 'department':
-                departments_data = db.session.query(
-                    Projects.department).distinct().all()
+                department_names = []
+                with open('departments.csv', 'r') as csvfile:
+                    reader = csv.reader(csvfile)
+                    department_names = [row[0] for row in reader]
                 department_data = {}
-                for department_tuple in departments_data:
-                    department_name = department_tuple[0]
+                for department_name in department_names:
                     department_projects = Projects.query.filter_by(
                         department=department_name).all()
                     department_projects = [
                         project for project in department_projects if project.status == "Complete"]
                     revenue = 0
-                    tutor_data = set()
-                    client_data = set()
-                    university_data = set()
-                    project_data = set()
+                    tutor_count = 0
+                    client_count = 0
+                    university_count = 0
+                    project_count = len(department_projects)
+                    tutor_ids = set()
+                    client_ids = set()
+                    university_names = set()
                     for project in department_projects:
-                        if (project.gain and project.price):
+                        if project.gain and project.price:
                             revenue += project.price - project.gain
-                            tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
-                            tutor_data.add(tutor_name_id)
-                            client_name_id = f"{project.client_name}"
-                            client_data.add(client_name_id)
-                            university_data.add(project.client.university)
-                            project_data.add(
-                                f"{project.name} (ID: {project.id})")
+                        tutor_ids.add(project.tutor_id)
+                        client_ids.add(project.client_name)
+                        university_names.add(project.university)
+                    tutor_count = len(tutor_ids)
+                    client_count = len(client_ids)
+                    university_count = len(university_names)
                     department_data[department_name] = {
                         'Revenue': revenue,
-                        'Tutors': ', '.join(tutor_data),
-                        'Clients': ', '.join(client_data),
-                        'Universities': ', '.join(university_data),
-                        'Projects': ', '.join(project_data)
+                        'Tutor Count': tutor_count,
+                        'Client Count': client_count,
+                        'University Count': university_count,
+                        'Project Count': project_count
                     }
                 headers = list(next(iter(department_data.values())).keys(
                 )) if department_data else ['Department']
@@ -416,36 +417,35 @@ def reports():
                 universities_data = db.session.query(
                     Projects.university).distinct().all()
                 university_data = {}
-                # for university_tuple in universities_data:
-                #     university_name = university_tuple[0]
-                #     university_projects = Projects.query.join(Clients).filter(
-                #         Clients.university == university_name).all()
-                # university_projects = [
-                #     project for project in university_projects if project.status == 'Complete']
-                # revenue = 0
-                # tutor_data = set()
-                # client_data = set()
-                # department_data = set()
-                # project_data = set()
-                # for project in university_projects:
-                #     if (project.price and project.gain):
-                #         revenue += project.price - project.gain
-                #         tutor_name_id = f"{project.tutor.name} (ID: {project.tutor.id})"
-                #         tutor_data.add(tutor_name_id)
-                #         client_name_id = f"{project.client_name}"
-                #         client_data.add(client_name_id)
-                #         department_data.add(project.department)
-                #         project_data.add(
-                #             f"{project.name} (ID: {project.id})")
-                # university_data[university_name] = {
-                #     'Revenue': revenue,
-                #     'Tutors': ', '.join(tutor_data),
-                #     'Clients': ', '.join(client_data),
-                #     'Departments': ', '.join(department_data),
-                #     'Projects': ', '.join(project_data)
-                # }
-                headers = ['University', 'Revenue', 'Tutors',
-                           'Clients', 'Departments', 'Projects']
+                for university_tuple in universities_data:
+                    university_name = university_tuple[0]
+                    university_projects = Projects.query.filter_by(
+                        university=university_name, status='Complete').all()
+                    revenue = 0
+                    tutor_count = 0
+                    client_count = 0
+                    project_count = len(university_projects)
+                    department_summary = set()
+                    tutor_ids = set()
+                    client_ids = set()
+                    for project in university_projects:
+                        if project.price and project.gain:
+                            revenue += project.price - project.gain
+                        tutor_ids.add(project.tutor_id)
+                        client_ids.add(project.client_name)
+                        department_summary.add(project.department)
+                    tutor_count = len(tutor_ids)
+                    client_count = len(client_ids)
+                    university_data[university_name] = {
+                        'Revenue': revenue,
+                        'Tutor Count': tutor_count,
+                        'Client Count': client_count,
+                        'Project Count': project_count,
+                        'Department Count': len(department_summary)
+                    }
+                headers = list(next(iter(university_data.values())).keys(
+                )) if university_data else ['University']
+                headers.insert(0, 'University')
                 return render_template("/reports.html", query_type=query_type, data=university_data, headers=headers)
     return render_template("/reports.html")
 
@@ -488,30 +488,11 @@ def entries():
 @views.route('/search', methods=['POST', 'GET'])
 @login_required
 def search():
+    tutors = Tutors.query.all()
     if request.method == 'POST':
         objects = ['client', 'tutor', 'projects']
         if request.form.get('logout') == 'logout':
             return redirect(url_for('auth.logout'))
-        # elif request.form.get('client') == 'client':
-        #     search_query_name = request.form.get('name').strip()
-        #     search_query_university = request.form.get('university').strip()
-        #     search_query_department = request.form.get('department').strip()
-        #     search_query_number = request.form.get('number').strip()
-        #     clients_filtered = Clients.query.filter(
-        #         and_(
-        #             Clients.name.ilike(f'%{search_query_name}%'),
-        #             Clients.university.ilike(f'%{search_query_university}%'),
-        #             Clients.department.ilike(f'%{search_query_department}%'),
-        #             Clients.number.ilike(f'%{search_query_number}%')
-        #         )
-        #     ).all()
-        #     results = clients_filtered
-        #     headers = list(Clients.__mapper__.columns.keys()) + \
-        #         list(Clients.__mapper__.relationships.keys())
-        #     headers = [header for header in headers if header not in [
-        #         'tutor_id', 'client_id']]
-        #     modified_results = get_modified_results(results, headers, objects)
-        #     return render_template("search.html", results=modified_results, headers=headers)
         elif request.form.get('tutor') == 'tutor':
             search_query_name = request.form.get('name').strip()
             search_query_department = request.form.get('department').strip()
@@ -528,7 +509,7 @@ def search():
             headers = [header for header in headers if header not in [
                 'tutor_id', 'client_id']]
             modified_results = get_modified_results(results, headers, objects)
-            return render_template("search.html", results=modified_results, headers=headers, departments=get_departments())
+            return render_template("search.html", results=modified_results, headers=headers, departments=get_departments(), tutors=tutors)
         elif request.form.get('project') == 'project':
             search_query_name = request.form.get('name').strip()
             search_query_type = request.form.get('type').strip()
@@ -549,22 +530,20 @@ def search():
             headers = [header for header in headers if header not in [
                 'tutor_id', 'client_id']]
             modified_results = get_modified_results(results, headers, objects)
-            return render_template("search.html", results=modified_results, headers=headers, departments=get_departments())
+            return render_template("search.html", results=modified_results, headers=headers, departments=get_departments(), tutors=tutors)
         elif request.form.get('save') == 'save':
             form_headers = request.form.get('headers')
             if form_headers:
                 form_headers = form_headers.split(',')
             headers_map = {
                 tuple(header for header in list(Projects.__mapper__.columns.keys()) + list(Projects.__mapper__.relationships.keys()) if header not in ['tutor_id', 'client_id']): 'projects',
-                tuple(header for header in list(Tutors.__mapper__.columns.keys()) + list(Tutors.__mapper__.relationships.keys()) if header not in ['tutor_id', 'client_id']): 'tutors',
-                # tuple(header for header in list(Clients.__mapper__.columns.keys()) + list(Clients.__mapper__.relationships.keys()) if header not in ['tutor_id', 'client_id']): 'clients'
+                tuple(header for header in list(Tutors.__mapper__.columns.keys()) + list(Tutors.__mapper__.relationships.keys()) if header not in ['tutor_id', 'client_id']): 'tutors'
             }
             table = headers_map.get(tuple(form_headers), None)
             if table:
                 table_mapping = {
                     'projects': Projects,
                     'tutors': Tutors,
-                    # 'clients': Clients
                 }
                 table_class = table_mapping.get(table)
                 data = {}
@@ -593,4 +572,4 @@ def search():
                                 except KeyError:
                                     pass
                             db.session.commit()
-    return render_template("search.html", departments=get_departments())
+    return render_template("search.html", departments=get_departments(), tutors=tutors)

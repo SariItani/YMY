@@ -81,21 +81,25 @@
 			</div>
 		</nav>
         <div class="mt-4">
-        <form method="POST">
-            <h1 class="text-secondary mb-3"><b>Obtain the Report By:</b></h1>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="query_type" id="month" value="month">
-                <label class="form-check-label" for="month">By Month</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="query_type" id="department" value="department">
-                <label class="form-check-label" for="department">By Department</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="query_type" id="uni" value="uni">
-                <label class="form-check-label" for="uni">By University</label>
-              </div>              
-            <button class="btn btn-outline-danger" type="submit">Submit</button>
+			<form method="POST">
+				<div class="row ml-2">
+				  <div class="col-md-auto">
+					<h1 class="text-secondary mb-3"><b>Obtain the Report By:</b></h1>
+				  </div>
+				</div>
+				<div class="row ml-2">
+				  <div class="col-md-auto">
+					<select class="form-control" name="query_type">
+					  <option value="month">By Month</option>
+					  <option value="department">By Department</option>
+					  <option value="uni">By University</option>
+					</select>
+				  </div>
+				  <div class="col-md-auto">
+					<button class="btn btn-outline-danger" type="submit">Submit</button>
+				  </div>
+				</div>
+			  </form>			  
             <div id="query-results">
 				{% if data %}
                 <h1 class="text-dark"><b>Reports</b></h1>
@@ -133,7 +137,6 @@
 				</div>
 				  {%endif%}               
             </div>
-        </form>
         </div>
 		<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
 		<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>

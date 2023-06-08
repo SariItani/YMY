@@ -346,7 +346,7 @@
                 </form>
             </div>
             <div class="text-center">
-                <button name="new-task" id="new-task" type="submit" onclick="toggleForm()" class="btn btn-warning">Add New Task</button>
+                <button name="new-task" id="new-task" type="submit" class="btn btn-warning">Add New Task</button>
             </div>
           </div>
         </div>
@@ -440,18 +440,22 @@
           }
         </script>
         <script>
-            function toggleForm() {
-              var form = document.getElementById("project-form");
-              var button = document.querySelector("new-task");
-          
-              if (form.style.display === "none") {
-                form.style.display = "block";
-                button.textContent = "Hide";
-              } else if (form.style.display === "block") {
-                form.style.display = "none";
-                button.textContent = "Add New Task";
-              }
-            }
+                var tutorFormVisible = false;
+                var tutorFormContainer = document.getElementById("project-form");
+                var toggleTutorButton = document.getElementById("new-task");
+
+                tutorFormContainer.style.display = "none";
+
+                toggleTutorButton.addEventListener("click", function () {
+                    if (tutorFormVisible) {
+                        tutorFormContainer.style.display = "none";
+                        toggleTutorButton.textContent = "Create New Task";
+                    } else {
+                        tutorFormContainer.style.display = "block";
+                        toggleTutorButton.textContent = "Hide";
+                    }
+                    tutorFormVisible = !tutorFormVisible;
+                });
           </script>
           <script>
             function showTutors(tutorsList) {

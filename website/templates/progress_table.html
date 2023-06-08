@@ -94,6 +94,7 @@
 					<th>Type</th>
                     <th>Course Name</th>
                     <th>Department</th>
+					<th>Client File</th>
                     <th>Due Date</th>
 					<th>Expected Due</th>
                     <th>Tutor</th>
@@ -110,6 +111,13 @@
 					<td>{{ project.type }}</td>
 					  <td>{{ project.name }}</td>
 					  <td>{{ project.department }}</td>
+					  <td>
+						{% if project.fileClient %}
+                            <a href="/download/{{project.fileClient}}" target="_blank">Download File</a>
+                            {%else%}
+                            None Available
+                            {%endif%}
+					</td>
 					  <td>{{ project.due }}</td>
 					  <td>{{ project.expected_due }}</td>
 					  <td>
@@ -142,6 +150,7 @@
 						<th>Type</th>
 						<th>Course Name</th>
 						<th>Department</th>
+						<th>Client File</th>
 						<th>Due Date</th>
 						<th>Expected Due</th>
 						<th>Tutor</th>
